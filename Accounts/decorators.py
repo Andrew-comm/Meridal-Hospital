@@ -1,10 +1,27 @@
-# accounts/decorators.py
+from django.shortcuts import redirect
+from django.contrib import messages
 
-from django.contrib.auth.decorators import user_passes_test
 
+def role_required(roles):
 
-def role_required(role):
+    def decorator(view_func):
 
-    return user_passes_test(
-        lambda u: u.role == role
-    )
+        def wrapper(request, *args, **kwargs):
+
+            if request.user.role in roles:
+                return view_func(
+                    request,
+                    *args,
+                    **kwargs
+                )
+
+            messages.error(
+                request,
+                "You are not authorized."
+            )
+
+            return redirect("dashboard")
+
+        return wrapper
+
+    return decorator

@@ -1,3 +1,5 @@
+# patients/forms.py
+
 from django import forms
 from .models import Patient
 
@@ -6,4 +8,20 @@ class PatientForm(forms.ModelForm):
 
     class Meta:
         model = Patient
-        fields = "__all__"
+
+        fields = [
+            "first_name",
+            "last_name",
+            "gender",
+            "date_of_birth",
+            "phone",
+            "email",
+            "address",
+            "emergency_contact",
+        ]
+
+        widgets = {
+            "date_of_birth": forms.DateInput(
+                attrs={"type": "date"}
+            )
+        }
