@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Patient Details</h2>
+
+<p>
+    <strong>Name:</strong>
+    {{ patient.first_name }}
+    {{ patient.last_name }}
+</p>
+
+<p>
+    <strong>Phone:</strong>
+    {{ patient.phone }}
+</p>
+
+<p>
+    <strong>Gender:</strong>
+    {{ patient.gender }}
+</p>
+
+<p>
+    <strong>Address:</strong>
+    {{ patient.address }}
+</p>
+
+<a href="{% url 'patient_update' patient.id %}"
+   class="btn btn-warning">
+   Edit
+</a>
+
+<a href="{% url 'patient_delete' patient.id %}"
+   class="btn btn-danger">
+   Delete
+</a>
+
+{% endblock %}
