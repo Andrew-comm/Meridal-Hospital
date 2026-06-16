@@ -2,6 +2,7 @@
 
 from django.db import models
 from datetime import date
+import uuid
 
 
 class Patient(models.Model):
@@ -9,6 +10,14 @@ class Patient(models.Model):
     GENDER_CHOICES = [
         ("Male", "Male"),
         ("Female", "Female"),
+    ]
+
+    STATUS_CHOICES = [
+        ("WAITING", "Waiting"),
+        ("CONSULTATION", "Consultation"),
+        ("LAB", "Laboratory"),
+        ("PHARMACY", "Pharmacy"),
+        ("COMPLETED", "Completed"),
     ]
 
     patient_number = models.CharField(
@@ -41,6 +50,19 @@ class Patient(models.Model):
         blank=True
     )
 
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="WAITING"
+    )
+
+    registered_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -51,35 +73,10 @@ class Patient(models.Model):
     def __str__(self):
         return f"{self.patient_number} - {self.first_name} {self.last_name}"
 
-    @property
-    def age(self):
-        today = date.today()
-
-        return (
-            today.year
-            - self.date_of_birth.year
-            - (
-                (today.month, today.day)
-                < (
-                    self.date_of_birth.month,
-                    self.date_of_birth.day
-                )
-            )
-        )
-
     def save(self, *args, **kwargs):
 
+        # ✅ FIX: ensure unique patient number always
         if not self.patient_number:
-
-            last_patient = Patient.objects.order_by(
-                "-id"
-            ).first()
-
-            if last_patient:
-                last_id = last_patient.id + 1
-            else:
-                last_id = 1
-
-            self.patient_number = f"PAT-{last_id:05d}"
+            self.patient_number = f"PAT-{uuid.uuid4().hex[:8].upper()}"
 
         super().save(*args, **kwargs)

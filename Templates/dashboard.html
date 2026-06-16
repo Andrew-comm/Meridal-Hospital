@@ -3,47 +3,107 @@
 {% block content %}
 
 <h2 class="mb-4">
-    Dashboard
+    Dashboard - {{ role }}
 </h2>
 
+<!-- STATS CARDS -->
 <div class="row">
 
+    <!-- USERS (ADMIN ONLY) -->
+    {% if can_manage_users %}
     <div class="col-md-4">
-
         <div class="card shadow">
-
             <div class="card-body">
-
                 <h5>Total Users</h5>
-
-                <h2>
-                    {{ total_users }}
-                </h2>
-
+                <h2>{{ total_users }}</h2>
             </div>
-
         </div>
+    </div>
+    {% endif %}
 
+    <!-- PATIENTS -->
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5>Total Patients</h5>
+                <h2>{{ total_patients }}</h2>
+            </div>
+        </div>
     </div>
 
+    <!-- LOGGED IN USER -->
     <div class="col-md-4">
-
         <div class="card shadow">
-
             <div class="card-body">
-
                 <h5>Logged In User</h5>
-
-                <p>{{ current_user.username }}</p>
-
+                <p><strong>{{ current_user.username }}</strong></p>
                 <p>{{ current_user.role }}</p>
-
             </div>
-
         </div>
-
     </div>
 
 </div>
+
+<hr>
+
+<!-- ACTION BUTTONS -->
+<div class="d-flex gap-2 mb-4">
+
+    {% if can_create_patient %}
+        <a href="{% url 'patient_create' %}" class="btn btn-primary">
+            + Register New Patient
+        </a>
+    {% endif %}
+
+    {% if can_view_patients %}
+        <a href="{% url 'patient_list' %}" class="btn btn-success">
+            View Patients
+        </a>
+    {% endif %}
+
+</div>
+
+<hr>
+
+<!-- RECENT PATIENTS -->
+{% if can_view_patients %}
+
+<h4>Recent Patients</h4>
+
+<table class="table table-striped mt-3">
+
+    <thead>
+        <tr>
+            <th>Patient No</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Registered By</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for patient in recent_patients %}
+        <tr>
+            <td>{{ patient.patient_number }}</td>
+            <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+            <td>{{ patient.phone }}</td>
+            <td>{{ patient.status }}</td>
+            <td>{{ patient.registered_by }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center">
+                No patients found
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endif %}
 
 {% endblock %}

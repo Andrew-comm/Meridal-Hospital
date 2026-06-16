@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from patients.models import Patient
 
 from .models import User
 
@@ -49,20 +50,32 @@ def login_view(request):
 
 @login_required
 def dashboard(request):
-    """
-    Dashboard View
-    """
+
+    user = request.user
+
+    total_users = User.objects.count()
+
+    # Patient stats
+    total_patients = Patient.objects.count()
+    recent_patients = Patient.objects.order_by("-created_at")[:5]
+
+    # ROLE FLAGS (IMPORTANT FOR UI CONTROL)
+    role = user.role
 
     context = {
-        "total_users": User.objects.count(),
-        "current_user": request.user,
+        "current_user": user,
+        "total_users": total_users,
+        "total_patients": total_patients,
+        "recent_patients": recent_patients,
+        "role": role,
+
+        # Permissions for UI
+        "can_create_patient": role in ["ADMIN", "RECEPTIONIST"],
+        "can_view_patients": role in ["ADMIN", "RECEPTIONIST", "DOCTOR", "NURSE", "LAB_TECH", "PHARMACIST"],
+        "can_manage_users": role == "ADMIN",
     }
 
-    return render(
-        request,
-        "dashboard.html",
-        context
-    )
+    return render(request, "dashboard.html", context)
 
 
 @login_required

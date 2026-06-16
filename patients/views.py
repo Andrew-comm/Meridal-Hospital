@@ -1,15 +1,35 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+
+from django.db.models import Q
 
 from .models import Patient
 from .forms import PatientForm
 
+from Accounts.decorators import role_required
+
 
 @login_required
+@role_required([
+    "ADMIN",
+    "RECEPTIONIST",
+    "DOCTOR",
+    "NURSE"
+])
 def patient_list(request):
 
-    patients = Patient.objects.all().order_by("-id")
+    query = request.GET.get("q")
+
+    patients = Patient.objects.all()
+
+    if query:
+        patients = patients.filter(
+            Q(patient_number__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(phone__icontains=query)
+        )
 
     return render(
         request,
@@ -18,20 +38,11 @@ def patient_list(request):
     )
 
 
-# patients/views.py
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-
-from .forms import PatientForm
-from .models import Patient
-
-from Accounts.decorators import role_required
-
-
 @login_required
-@role_required(["ADMIN", "RECEPTIONIST"])
+@role_required([
+    "ADMIN",
+    "RECEPTIONIST"
+])
 def patient_create(request):
 
     if request.method == "POST":
@@ -40,54 +51,66 @@ def patient_create(request):
 
         if form.is_valid():
 
-            patient = form.save()
+            patient = form.save(commit=False)
+
+            patient.registered_by = request.user
+
+            patient.save()
 
             messages.success(
                 request,
-                f"Patient {patient.patient_number} registered successfully."
+                f"Patient {patient.patient_number} created successfully."
             )
 
-            return redirect(
-                "patient_detail",
-                pk=patient.pk
-            )
+            return redirect("patient_detail", pk=patient.pk)
 
     else:
-
         form = PatientForm()
 
     return render(
         request,
-        "patients/patient_form.html",
+        "patient_form.html",
         {"form": form}
     )
 
+
+
 @login_required
+@role_required([
+    "ADMIN",
+    "RECEPTIONIST",
+    "DOCTOR",
+    "NURSE",
+    "LAB_TECH",
+    "PHARMACIST"
+])
+
+
+
 def patient_detail(request, pk):
 
-    patient = Patient.objects.get(pk=pk)
+    patient = get_object_or_404(Patient, pk=pk)
 
     return render(
         request,
-        "patients/patient_detail.html",
+        "patient_detail.html",
         {"patient": patient}
     )
 
 
+
 @login_required
+@role_required([
+    "ADMIN",
+    "RECEPTIONIST"
+])
 def patient_update(request, pk):
 
-    patient = get_object_or_404(
-        Patient,
-        pk=pk
-    )
+    patient = get_object_or_404(Patient, pk=pk)
 
     if request.method == "POST":
 
-        form = PatientForm(
-            request.POST,
-            instance=patient
-        )
+        form = PatientForm(request.POST, instance=patient)
 
         if form.is_valid():
             form.save()
@@ -97,10 +120,7 @@ def patient_update(request, pk):
                 "Patient updated successfully."
             )
 
-            return redirect(
-                "patient_detail",
-                pk=patient.id
-            )
+            return redirect("patient_detail", pk=patient.pk)
 
     else:
         form = PatientForm(instance=patient)
@@ -108,17 +128,20 @@ def patient_update(request, pk):
     return render(
         request,
         "patient_form.html",
-        {"form": form}
+        {"form": form, "patient": patient}
     )
+
+
+
 
 
 @login_required
+@role_required([
+    "ADMIN"
+])
 def patient_delete(request, pk):
 
-    patient = get_object_or_404(
-        Patient,
-        pk=pk
-    )
+    patient = get_object_or_404(Patient, pk=pk)
 
     if request.method == "POST":
 
