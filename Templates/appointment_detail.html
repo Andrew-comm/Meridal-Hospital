@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Appointment Details</h2>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <p>
+            <strong>Patient:</strong>
+            {{ appointment.patient }}
+        </p>
+
+        <p>
+            <strong>Doctor:</strong>
+            {{ appointment.doctor }}
+        </p>
+
+        <p>
+            <strong>Date:</strong>
+            {{ appointment.appointment_date }}
+        </p>
+
+        <p>
+            <strong>Status:</strong>
+            {{ appointment.status }}
+        </p>
+
+        <p>
+            <strong>Reason:</strong>
+            {{ appointment.reason }}
+        </p>
+
+    </div>
+
+</div>
+
+<br>
+
+<a href="{% url 'appointment_list' %}"
+   class="btn btn-secondary">
+    Back
+</a>
+
+{% if request.user.role == "ADMIN" or request.user.role == "RECEPTIONIST" %}
+
+<a href="{% url 'appointment_update' appointment.id %}"
+   class="btn btn-warning">
+    Edit
+</a>
+
+{% endif %}
+
+{% if request.user.role == "ADMIN" %}
+
+<a href="{% url 'appointment_delete' appointment.id %}"
+   class="btn btn-danger">
+    Delete
+</a>
+
+{% endif %}
+
+{% endblock %}

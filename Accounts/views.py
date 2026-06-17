@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from patients.models import Patient
+from appointments.models import Appointment
 
 from .models import User
 
@@ -52,27 +53,70 @@ def login_view(request):
 def dashboard(request):
 
     user = request.user
-
-    total_users = User.objects.count()
-
-    # Patient stats
-    total_patients = Patient.objects.count()
-    recent_patients = Patient.objects.order_by("-created_at")[:5]
-
-    # ROLE FLAGS (IMPORTANT FOR UI CONTROL)
     role = user.role
 
+    # -----------------------------
+    # ROLE PERMISSIONS
+    # -----------------------------
+    can_manage_users = role == "ADMIN"
+
+    can_create_patient = role in ["ADMIN", "RECEPTIONIST"]
+    can_view_patients = role in ["ADMIN", "RECEPTIONIST", "DOCTOR", "NURSE"]
+
+    can_create_appointment = role in ["ADMIN", "RECEPTIONIST"]
+    can_view_appointments = role in ["ADMIN", "RECEPTIONIST", "DOCTOR", "NURSE", "LAB_TECH", "PHARMACIST"]
+
+    # -----------------------------
+    # DATA COUNTS
+    # -----------------------------
+    total_users = User.objects.count() if can_manage_users else None
+    total_patients = Patient.objects.count()
+    total_appointments = Appointment.objects.count()
+
+    # -----------------------------
+    # RECENT DATA
+    # -----------------------------
+    recent_patients = Patient.objects.select_related(
+        "registered_by"
+    ).order_by("-created_at")[:5]
+
+    recent_appointments = Appointment.objects.select_related(
+        "patient", "doctor"
+    ).order_by("-created_at")[:5]
+
+    # -----------------------------
+    # DOCTOR FILTER (optional future-ready)
+    # -----------------------------
+    doctor_appointments = None
+
+    if role == "DOCTOR":
+        doctor_appointments = Appointment.objects.filter(
+            doctor=user
+        ).order_by("-appointment_date")[:5]
+
+    # -----------------------------
+    # CONTEXT
+    # -----------------------------
     context = {
+        "role": role,
         "current_user": user,
+
+        # permissions
+        "can_manage_users": can_manage_users,
+        "can_create_patient": can_create_patient,
+        "can_view_patients": can_view_patients,
+        "can_create_appointment": can_create_appointment,
+        "can_view_appointments": can_view_appointments,
+
+        # stats
         "total_users": total_users,
         "total_patients": total_patients,
-        "recent_patients": recent_patients,
-        "role": role,
+        "total_appointments": total_appointments,
 
-        # Permissions for UI
-        "can_create_patient": role in ["ADMIN", "RECEPTIONIST"],
-        "can_view_patients": role in ["ADMIN", "RECEPTIONIST", "DOCTOR", "NURSE", "LAB_TECH", "PHARMACIST"],
-        "can_manage_users": role == "ADMIN",
+        # data
+        "recent_patients": recent_patients,
+        "recent_appointments": recent_appointments,
+        "doctor_appointments": doctor_appointments,
     }
 
     return render(request, "dashboard.html", context)

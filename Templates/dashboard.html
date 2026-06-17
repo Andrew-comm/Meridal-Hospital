@@ -6,10 +6,11 @@
     Dashboard - {{ role }}
 </h2>
 
-<!-- STATS CARDS -->
+<!-- =========================
+     STATS CARDS
+========================= -->
 <div class="row">
 
-    <!-- USERS (ADMIN ONLY) -->
     {% if can_manage_users %}
     <div class="col-md-4">
         <div class="card shadow">
@@ -21,7 +22,6 @@
     </div>
     {% endif %}
 
-    <!-- PATIENTS -->
     <div class="col-md-4">
         <div class="card shadow">
             <div class="card-body">
@@ -31,13 +31,11 @@
         </div>
     </div>
 
-    <!-- LOGGED IN USER -->
     <div class="col-md-4">
         <div class="card shadow">
             <div class="card-body">
-                <h5>Logged In User</h5>
-                <p><strong>{{ current_user.username }}</strong></p>
-                <p>{{ current_user.role }}</p>
+                <h5>Total Appointments</h5>
+                <h2>{{ total_appointments }}</h2>
             </div>
         </div>
     </div>
@@ -46,12 +44,31 @@
 
 <hr>
 
-<!-- ACTION BUTTONS -->
+<!-- =========================
+     USER INFO
+========================= -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <h5>Logged In User</h5>
+        <p><strong>{{ current_user.username }}</strong></p>
+        <p>{{ current_user.role }}</p>
+    </div>
+</div>
+
+<!-- =========================
+     ACTION BUTTONS
+========================= -->
 <div class="d-flex gap-2 mb-4">
 
     {% if can_create_patient %}
         <a href="{% url 'patient_create' %}" class="btn btn-primary">
             + Register New Patient
+        </a>
+    {% endif %}
+
+    {% if can_create_appointment %}
+        <a href="{% url 'appointment_create' %}" class="btn btn-warning">
+            + Create Appointment
         </a>
     {% endif %}
 
@@ -61,11 +78,19 @@
         </a>
     {% endif %}
 
+    {% if can_view_appointments %}
+        <a href="{% url 'appointment_list' %}" class="btn btn-info">
+            View Appointments
+        </a>
+    {% endif %}
+
 </div>
 
 <hr>
 
-<!-- RECENT PATIENTS -->
+<!-- =========================
+     RECENT PATIENTS
+========================= -->
 {% if can_view_patients %}
 
 <h4>Recent Patients</h4>
@@ -90,12 +115,67 @@
             <td>{{ patient.first_name }} {{ patient.last_name }}</td>
             <td>{{ patient.phone }}</td>
             <td>{{ patient.status }}</td>
-            <td>{{ patient.registered_by }}</td>
+            <td>
+                {% if patient.registered_by %}
+                    {{ patient.registered_by.username }}
+                {% else %}
+                    System
+                {% endif %}
+            </td>
         </tr>
         {% empty %}
         <tr>
             <td colspan="5" class="text-center">
                 No patients found
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endif %}
+
+<hr>
+
+<!-- =========================
+     RECENT APPOINTMENTS
+========================= -->
+{% if can_view_appointments %}
+
+<h4>Recent Appointments</h4>
+
+<table class="table table-striped mt-3">
+
+    <thead>
+        <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for appt in recent_appointments %}
+        <tr>
+            <td>{{ appt.patient.patient_number }}</td>
+            <td>
+                {% if appt.doctor %}
+                    {{ appt.doctor.username }}
+                {% else %}
+                    Unassigned
+                {% endif %}
+            </td>
+            <td>{{ appt.appointment_date }}</td>
+            <td>{{ appt.status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" class="text-center">
+                No appointments found
             </td>
         </tr>
         {% endfor %}

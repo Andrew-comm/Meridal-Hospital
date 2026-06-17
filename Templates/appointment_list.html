@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Appointments</h2>
+
+{% if request.user.role == "ADMIN" or request.user.role == "RECEPTIONIST" %}
+<a href="{% url 'appointment_create' %}"
+   class="btn btn-primary mb-3">
+    Create Appointment
+</a>
+{% endif %}
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for appointment in appointments %}
+
+        <tr>
+
+            <td>
+                {{ appointment.patient.patient_number }}
+            </td>
+
+            <td>
+                Dr. {{ appointment.doctor.first_name }}
+            </td>
+
+            <td>
+                {{ appointment.appointment_date }}
+            </td>
+
+            <td>
+                {{ appointment.status }}
+            </td>
+
+            <td>
+
+                <a href="{% url 'appointment_detail' appointment.id %}"
+                   class="btn btn-info btn-sm">
+                    View
+                </a>
+
+                {% if request.user.role == "ADMIN" or request.user.role == "RECEPTIONIST" %}
+
+                <a href="{% url 'appointment_update' appointment.id %}"
+                   class="btn btn-warning btn-sm">
+                    Edit
+                </a>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+            <td colspan="5">
+                No appointments found.
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}
